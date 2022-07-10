@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import httpProxy from 'http-proxy';
+import httpProxy, { ProxyResCallback } from 'http-proxy';
 import Cookies from 'cookies';
 // type Data = {
 //     name: string;
@@ -16,27 +16,17 @@ export const config = {
 
 //Tất cả các Api khi vào thì phải đi qua hàm này rồi mới đi tiếp lên server thật
 export default function handler(req: NextApiRequest, res: NextApiResponse<any>) {
-    return new Promise((resolve) => {
-        const cookies = new Cookies(req, res);
-        const accessToken = cookies.get('accessToken');
+    if (req.method !== 'POST') {
+        res.status(404).json({ message: 'Method does support' });
+    }
 
-        if (accessToken) {
-            req.headers.authorization = `Bearer ${accessToken}`;
-        }
-        req.headers.cookie = '';
-        proxy.web(req, res, {
-            target: process.env.API_URL,
-
-            //Đổi đường dẫn
-            changeOrigin: true,
-
-            //KHi nhận được server thì sẽ trả về cho client luôn
-            selfHandleResponse: false,
-        });
-        proxy.once('proxyRes', () => {
-            resolve(true);
-        });
-    });
+    //B1: Chạy Proxy once
+    //B2: Chạy proxy web (Muốn hanle response của api server trả về thì sẽ gọi hàm và xử lý ==> Xử lý thông qua PROMISS và thành công thì sẽ resolve)
+    //B3:
+    console.log('logout request');
+    const cookies = new Cookies(req, res);
+    cookies.set('accessToken');
+    res.status(200).json({ messege: 'Logout Successfully' });
 
     //API resolved without sending a response for /api/products?_page=1, this may result in stalled requests
     //Là do đang ở trạng thái pending => Sử dụng promiss để có thể tránh được vấn đề này
